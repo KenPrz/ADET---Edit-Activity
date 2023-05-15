@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -32,62 +33,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
+
 <body>
     <?php
-    // Retrieve data from the database
-    $sql = "SELECT * FROM `users`";
-    $result = mysqli_query($conn, $sql);
+    // Pagination configuration
+    $pageLimit = 10; // Number of entries per page
+    $page = isset($_GET['page']) ? $_GET['page'] : 1; // Current page number
+    
+    // Calculate the offset for database query
+    $offset = ($page - 1) * $pageLimit;
+
+    // Retrieve data from the database with LIMIT and OFFSET
+    $query = "SELECT * FROM users LIMIT $pageLimit OFFSET $offset";
+    $result = mysqli_query($conn, $query);
+
+    // Calculate total number of pages
+    $queryCount = "SELECT COUNT(*) as total FROM users";
+    $resultCount = mysqli_query($conn, $queryCount);
+    $rowCount = mysqli_fetch_assoc($resultCount);
+    $totalPages = ceil($rowCount['total'] / $pageLimit);
     ?>
-    <div class="row">
-        <div class="col-8">
-            <form method="post">
-                <table class="table table-striped table-bordered">
-                    <thead>
+<div class="row m-1">
+    <div class="col-8 m-2">
+        <form method="post">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                        <?php
+                        $id = $row['id'];
+                        $name = htmlspecialchars($row['name']);
+                        $username = htmlspecialchars($row['username']);
+                        $email = htmlspecialchars($row['email']);
+                        $password = htmlspecialchars($row['password']);
+                        ?>
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Password</th>
+                            <td>
+                                <?= $id ?>
+                            </td>
+                            <td><input type="text" name="name[]" value="<?= $name ?>"></td>
+                            <td><input type="text" name="username[]" value="<?= $username ?>"></td>
+                            <td><input type="text" name="email[]" value="<?= $email ?>"></td>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="showPassword<?= $id ?>"
+                                        onclick="togglePassword('password<?= $id ?>')">
+                                    <input type="password" name="password[]" value="<?= $password ?>"
+                                        id="password<?= $id ?>">
+                                </div>
+                            </td>
+                            <input type="hidden" name="id[]" value="<?= $id ?>">
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                            <?php
-                            $id = $row['id'];
-                            $name = htmlspecialchars($row['name']);
-                            $username = htmlspecialchars($row['username']);
-                            $email = htmlspecialchars($row['email']);
-                            $password = htmlspecialchars($row['password']);
-                            ?>
-                            <tr>
-                                <td>
-                                    <?= $id ?>
-                                </td>
-                                <td><input type="text" name="name[]" value="<?= $name ?>"></td>
-                                <td><input type="text" name="username[]" value="<?= $username ?>"></td>
-                                <td><input type="text" name="email[]" value="<?= $email ?>"></td>
-                                <td>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="showPassword<?= $id ?>"
-                                            onclick="togglePassword('password<?= $id ?>')">
-                                        <input type="password" name="password[]" value="<?= $password ?>"
-                                            id="password<?= $id ?>">
-                                    </div>
-                                </td>
-                                <input type="hidden" name="id[]" value="<?= $id ?>">
-                            </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-                <input type="submit" value="Save" class="btn btn-primary float-right">
-            </form>
-        </div>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+            <div class="row">
+                <div class="col-6">
+                    <!-- Pagination links -->
+                    <ul class="pagination">
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
+                            </li>
+                        <?php endif; ?>
+
+                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor; ?>
+
+                        <?php if ($page < $totalPages): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+                <div class="col-6">
+                    <input type="submit" value="Save" class="btn btn-success float-right">
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 </body>
+
 </html>
 <script>
-    function togglePassword(inputId) {
+function togglePassword(inputId) {
         const passwordInput = document.getElementById(inputId);
         if (passwordInput.type === "password") {
             passwordInput.type = "text";

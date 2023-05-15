@@ -2,7 +2,7 @@
 //connection idkwsadfsdfasdf
 $host = 'localhost';
 $username = 'root';
-$password = '';
+$password = 'traxex123lord';
 $dbname = 'adet';
 
 $conn = mysqli_connect($host, $username, $password, $dbname);
